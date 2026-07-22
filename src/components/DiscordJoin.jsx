@@ -32,7 +32,7 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           return `FAIL: ${err.message ?? err.name ?? 'unknown'}`
         }
       }
-      const [viaPatch, viaProxyPath, wikipedia] = await Promise.all([
+      const [viaPatch, viaProxyPath, wikipedia, websocket] = await Promise.all([
         probe(async () => {
           const res = await fetch(
             'https://namedrop-8bf7f-default-rtdb.firebaseio.com/rooms.json?shallow=true',
@@ -49,8 +49,25 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           const results = await searchWikipedia('test')
           return `${results.length} results`
         }),
+        probe(
+          () =>
+            new Promise((resolve, reject) => {
+              let opened = false
+              const ws = new WebSocket(
+                'wss://namedrop-8bf7f-default-rtdb.firebaseio.com/.ws?v=5&ns=namedrop-8bf7f-default-rtdb',
+              )
+              ws.onopen = () => {
+                opened = true
+                ws.close()
+                resolve('open')
+              }
+              ws.onclose = (e) => {
+                if (!opened) reject(new Error(`closed, code ${e.code}`))
+              }
+            }),
+        ),
       ])
-      setDiag({ viaPatch, viaProxyPath, wikipedia })
+      setDiag({ viaPatch, viaProxyPath, wikipedia, websocket })
     })()
   }, [])
 
@@ -113,10 +130,12 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           db-direct-proxy: {diag.viaProxyPath}
           <br />
           wikipedia: {diag.wikipedia}
+          <br />
+          websocket: {diag.websocket}
         </p>
       )}
       <p className="muted" style={{ fontSize: '0.75rem' }}>
-        build 9
+        build 10
       </p>
     </main>
   )
