@@ -1,6 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getSavedName, saveName } from '../identity'
 import { joinOrCreateRoom } from '../lib/room'
+import { searchWikipedia } from '../lib/wikipedia'
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(label)), ms),
+    ),
+  ])
+}
 
 // The activity replaces the whole create/join flow: the voice channel is
 // the room, so newcomers only need a display name.
@@ -8,6 +18,32 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
   const [name, setName] = useState(getSavedName())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [diag, setDiag] = useState(null)
+
+  // Self-test both proxy pipes so a broken URL mapping shows up as a
+  // readable ✓/✗ line instead of a silent hang.
+  useEffect(() => {
+    ;(async () => {
+      const probe = async (fn) => {
+        try {
+          await withTimeout(fn(), 6000, 'timeout')
+          return true
+        } catch {
+          return false
+        }
+      }
+      const [database, wikipedia] = await Promise.all([
+        probe(async () => {
+          const res = await fetch(
+            'https://namedrop-8bf7f-default-rtdb.firebaseio.com/rooms.json?shallow=true',
+          )
+          if (!res.ok) throw new Error('bad response')
+        }),
+        probe(() => searchWikipedia('test')),
+      ])
+      setDiag({ database, wikipedia })
+    })()
+  }, [])
 
   async function handleJoin(event) {
     event.preventDefault()
@@ -20,7 +56,11 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
     setError(null)
     try {
       saveName(trimmed)
-      await joinOrCreateRoom(roomCode, playerId, trimmed)
+      await withTimeout(
+        joinOrCreateRoom(roomCode, playerId, trimmed),
+        10000,
+        "Couldn't reach the game database — the /firebase URL mapping in the Discord Developer Portal is probably wrong",
+      )
       onJoined(roomCode)
     } catch (err) {
       setError(err.message)
@@ -54,6 +94,12 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
       {error?.includes('in progress') && (
         <p className="muted">
           You'll be able to join as soon as the current round wraps up.
+        </p>
+      )}
+      {diag && (!diag.database || !diag.wikipedia) && (
+        <p className="error">
+          Connection check — database: {diag.database ? '✓' : '✗'} · wikipedia:{' '}
+          {diag.wikipedia ? '✓' : '✗'}
         </p>
       )}
     </main>
