@@ -11,10 +11,12 @@ export const isDiscordActivity = new URLSearchParams(window.location.search).has
 )
 
 if (isDiscordActivity) {
-  // Same prefixes as the URL Mappings in the Discord Developer Portal.
+  // Portal mappings are /firebase/{subdomain} etc., but the proxy serves
+  // them under /.proxy/ — and patchUrlMappings pastes prefixes verbatim
+  // (it does NOT add /.proxy itself), so it must be included here.
   patchUrlMappings([
-    { prefix: '/firebase/{subdomain}', target: '{subdomain}.firebaseio.com' },
-    { prefix: '/wiki', target: 'en.wikipedia.org' },
-    { prefix: '/wikimedia', target: 'upload.wikimedia.org' },
+    { prefix: '/.proxy/firebase/{subdomain}', target: '{subdomain}.firebaseio.com' },
+    { prefix: '/.proxy/wiki', target: 'en.wikipedia.org' },
+    { prefix: '/.proxy/wikimedia', target: 'upload.wikimedia.org' },
   ])
 }
