@@ -56,10 +56,11 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
     setError(null)
     try {
       saveName(trimmed)
+      // First connection through Discord's proxy can be slow — give it room
       await withTimeout(
         joinOrCreateRoom(roomCode, playerId, trimmed),
-        10000,
-        "Couldn't reach the game database — the /firebase URL mapping in the Discord Developer Portal is probably wrong",
+        25000,
+        "Couldn't reach the game database — try Jump in once more; if it keeps failing, the /firebase URL mapping is likely wrong",
       )
       onJoined(roomCode)
     } catch (err) {
@@ -102,6 +103,9 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           {diag.wikipedia ? '✓' : '✗'}
         </p>
       )}
+      <p className="muted" style={{ fontSize: '0.75rem' }}>
+        build 8
+      </p>
     </main>
   )
 }
