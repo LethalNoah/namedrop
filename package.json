@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@discord/embedded-app-sdk": "^2.5.0",
     "firebase": "^11.10.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

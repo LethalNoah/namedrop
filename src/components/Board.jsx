@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { passTurn, setRoomStatus, submitGuessResult } from '../lib/room'
+import { imageUrl } from '../discord'
 
 export default function Board({ room, roomCode, playerId }) {
   const players = Object.entries(room.players ?? {}).sort(
@@ -84,7 +85,7 @@ export default function Board({ room, roomCode, playerId }) {
               ) : player.character?.thumbnailUrl ? (
                 <img
                   className="card-img"
-                  src={player.character.thumbnailUrl}
+                  src={imageUrl(player.character.thumbnailUrl)}
                   alt={player.character.title}
                 />
               ) : (
@@ -146,7 +147,7 @@ export default function Board({ room, roomCode, playerId }) {
                 {me.character?.thumbnailUrl && (
                   <img
                     className="modal-img"
-                    src={me.character.thumbnailUrl}
+                    src={imageUrl(me.character.thumbnailUrl)}
                     alt={me.character.title}
                   />
                 )}

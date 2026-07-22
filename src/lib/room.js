@@ -70,12 +70,30 @@ export async function joinRoom(code, playerId, name) {
   if (!snap.exists()) throw new Error('Room not found — check the code')
   const room = snap.val()
   const alreadyIn = Boolean(room.players?.[playerId])
-  if (room.status !== 'lobby' && !alreadyIn) {
-    throw new Error('That game has already started')
+  // Newcomers can enter in the lobby or between rounds (reveal screen);
+  // they'd break an in-flight round, so those are blocked.
+  if (room.status !== 'lobby' && room.status !== 'reveal' && !alreadyIn) {
+    throw new Error('A round is in progress — try again when it ends')
   }
   const patch = { name, connected: true }
   if (!alreadyIn) patch.joinedAt = serverTimestamp()
   await update(ref(db, `rooms/${code}/players/${playerId}`), patch)
+}
+
+// Discord activities: the first person in claims the room, everyone else
+// joins it. The check-then-set race between two first joiners is harmless
+// (identical room shape; last write's hostId wins).
+export async function joinOrCreateRoom(code, playerId, name) {
+  const snap = await get(ref(db, `rooms/${code}`))
+  if (!snap.exists()) {
+    await set(ref(db, `rooms/${code}`), {
+      status: 'lobby',
+      hostId: playerId,
+      turnOrder: 'rotating',
+      createdAt: serverTimestamp(),
+    })
+  }
+  await joinRoom(code, playerId, name)
 }
 
 export function subscribeRoom(code, callback) {

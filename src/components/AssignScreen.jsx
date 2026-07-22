@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { searchWikipedia } from '../lib/wikipedia'
 import { lockCharacter, setRoomStatus } from '../lib/room'
+import { imageUrl } from '../discord'
 
 export default function AssignScreen({ room, roomCode, playerId }) {
   const me = room.players?.[playerId]
@@ -110,7 +111,7 @@ export default function AssignScreen({ room, roomCode, playerId }) {
         </h1>
         <div className="confirm-card">
           {selected.thumbnailUrl ? (
-            <img src={selected.thumbnailUrl} alt={selected.title} />
+            <img src={imageUrl(selected.thumbnailUrl)} alt={selected.title} />
           ) : (
             <div className="thumb-placeholder large">?</div>
           )}
@@ -153,7 +154,7 @@ export default function AssignScreen({ room, roomCode, playerId }) {
             <li key={result.title}>
               <button className="result" onClick={() => setSelected(result)}>
                 {result.thumbnailUrl ? (
-                  <img src={result.thumbnailUrl} alt="" />
+                  <img src={imageUrl(result.thumbnailUrl)} alt="" />
                 ) : (
                   <span className="thumb-placeholder">?</span>
                 )}

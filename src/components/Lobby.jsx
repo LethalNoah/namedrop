@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { leaveRoom, setTurnOrder, startGame } from '../lib/room'
+import { isDiscordActivity } from '../discord'
 
 export default function Lobby({ room, roomCode, playerId, onLeft }) {
   const [copied, setCopied] = useState(false)
@@ -38,10 +39,19 @@ export default function Lobby({ room, roomCode, playerId, onLeft }) {
   return (
     <main className="shell">
       <h1>Lobby</h1>
-      <div className="room-code" aria-label="Room code">
-        {roomCode}
-      </div>
-      <button onClick={handleCopyLink}>{copied ? 'Copied!' : 'Copy invite link'}</button>
+      {isDiscordActivity ? (
+        // The voice channel is the invite — codes and links don't apply
+        <p className="muted">Anyone in this voice channel can jump in.</p>
+      ) : (
+        <>
+          <div className="room-code" aria-label="Room code">
+            {roomCode}
+          </div>
+          <button onClick={handleCopyLink}>
+            {copied ? 'Copied!' : 'Copy invite link'}
+          </button>
+        </>
+      )}
 
       <ul className="player-list">
         {players.map(([id, player]) => (

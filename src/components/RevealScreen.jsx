@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { startGame } from '../lib/room'
+import { imageUrl } from '../discord'
 
 export default function RevealScreen({ room, roomCode, playerId }) {
   const [error, setError] = useState(null)
@@ -27,7 +28,7 @@ export default function RevealScreen({ room, roomCode, playerId }) {
         {players.map(([id, player]) => (
           <li key={id}>
             {player.character?.thumbnailUrl ? (
-              <img src={player.character.thumbnailUrl} alt="" />
+              <img src={imageUrl(player.character.thumbnailUrl)} alt="" />
             ) : (
               <span className="thumb-placeholder">?</span>
             )}

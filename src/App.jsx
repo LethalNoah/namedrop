@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { isFirebaseConfigured } from './firebase'
 import { getPlayerId } from './identity'
 import { subscribeRoom, attachPresence } from './lib/room'
+import { isDiscordActivity, initDiscord } from './discord'
 import Home from './components/Home'
+import DiscordJoin from './components/DiscordJoin'
 import Lobby from './components/Lobby'
 import AssignScreen from './components/AssignScreen'
 import Board from './components/Board'
@@ -18,6 +20,15 @@ function codeFromUrl() {
 export default function App() {
   const [joinedCode, setJoinedCode] = useState(null)
   const [room, setRoom] = useState(undefined) // undefined = loading, null = gone
+  const [activityRoom, setActivityRoom] = useState(null)
+  const [activityError, setActivityError] = useState(null)
+
+  useEffect(() => {
+    if (!isDiscordActivity) return
+    initDiscord()
+      .then(setActivityRoom)
+      .catch((err) => setActivityError(err.message ?? 'Could not connect to Discord'))
+  }, [])
 
   useEffect(() => {
     if (!joinedCode) return
@@ -47,6 +58,30 @@ export default function App() {
   if (!isFirebaseConfigured) return <SetupNotice />
 
   if (!joinedCode) {
+    if (isDiscordActivity) {
+      if (activityError) {
+        return (
+          <main className="shell">
+            <h1>Namedrop</h1>
+            <p className="error">{activityError}</p>
+          </main>
+        )
+      }
+      if (!activityRoom) {
+        return (
+          <main className="shell">
+            <p className="muted">Connecting to Discord…</p>
+          </main>
+        )
+      }
+      return (
+        <DiscordJoin
+          playerId={playerId}
+          roomCode={activityRoom}
+          onJoined={handleJoined}
+        />
+      )
+    }
     return <Home playerId={playerId} initialCode={codeFromUrl()} onJoined={handleJoined} />
   }
 
