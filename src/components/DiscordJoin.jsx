@@ -20,28 +20,37 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
   const [error, setError] = useState(null)
   const [diag, setDiag] = useState(null)
 
-  // Self-test both proxy pipes so a broken URL mapping shows up as a
-  // readable ✓/✗ line instead of a silent hang.
+  // Self-test each proxy pipe separately so a failure names its culprit
+  // on screen instead of hanging silently.
   useEffect(() => {
     ;(async () => {
       const probe = async (fn) => {
         try {
-          await withTimeout(fn(), 6000, 'timeout')
-          return true
-        } catch {
-          return false
+          const result = await withTimeout(fn(), 6000, 'timeout')
+          return result ?? 'ok'
+        } catch (err) {
+          return `FAIL: ${err.message ?? err.name ?? 'unknown'}`
         }
       }
-      const [database, wikipedia] = await Promise.all([
+      const [viaPatch, viaProxyPath, wikipedia] = await Promise.all([
         probe(async () => {
           const res = await fetch(
             'https://namedrop-8bf7f-default-rtdb.firebaseio.com/rooms.json?shallow=true',
           )
-          if (!res.ok) throw new Error('bad response')
+          return `http ${res.status}`
         }),
-        probe(() => searchWikipedia('test')),
+        probe(async () => {
+          const res = await fetch(
+            '/.proxy/firebase/namedrop-8bf7f-default-rtdb/rooms.json?shallow=true',
+          )
+          return `http ${res.status}`
+        }),
+        probe(async () => {
+          const results = await searchWikipedia('test')
+          return `${results.length} results`
+        }),
       ])
-      setDiag({ database, wikipedia })
+      setDiag({ viaPatch, viaProxyPath, wikipedia })
     })()
   }, [])
 
@@ -97,14 +106,17 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           You'll be able to join as soon as the current round wraps up.
         </p>
       )}
-      {diag && (!diag.database || !diag.wikipedia) && (
-        <p className="error">
-          Connection check — database: {diag.database ? '✓' : '✗'} · wikipedia:{' '}
-          {diag.wikipedia ? '✓' : '✗'}
+      {diag && (
+        <p className="muted" style={{ fontSize: '0.75rem', textAlign: 'left' }}>
+          db-patched: {diag.viaPatch}
+          <br />
+          db-direct-proxy: {diag.viaProxyPath}
+          <br />
+          wikipedia: {diag.wikipedia}
         </p>
       )}
       <p className="muted" style={{ fontSize: '0.75rem' }}>
-        build 8
+        build 9
       </p>
     </main>
   )
