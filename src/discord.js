@@ -1,27 +1,16 @@
-import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk'
+import { DiscordSDK } from '@discord/embedded-app-sdk'
+import { isDiscordActivity } from './discordPatch'
 
 const DISCORD_CLIENT_ID = '1529563989305069648' // public, like the Firebase config
 
-// Discord loads Activities in an iframe with ?frame_id=... — that's how we
-// know we're inside Discord rather than a normal browser tab.
-export const isDiscordActivity = new URLSearchParams(window.location.search).has(
-  'frame_id',
-)
+export { isDiscordActivity }
 
 let sdk = null
 
 // Call once at startup, only in Discord mode. Resolves to the room code
-// shared by everyone in this activity instance.
+// shared by everyone in this activity instance. (The sandbox network
+// patch lives in discordPatch.js and has already run by now.)
 export async function initDiscord() {
-  // Inside Discord's sandbox all network calls must go through its proxy.
-  // This patches fetch/WebSocket so Firebase and the Wikipedia API work
-  // unchanged. The same prefixes must exist as URL Mappings in the
-  // Discord Developer Portal.
-  patchUrlMappings([
-    { prefix: '/firebase/{subdomain}', target: '{subdomain}.firebaseio.com' },
-    { prefix: '/wiki', target: 'en.wikipedia.org' },
-    { prefix: '/wikimedia', target: 'upload.wikimedia.org' },
-  ])
   sdk = new DiscordSDK(DISCORD_CLIENT_ID)
   await sdk.ready()
   return roomCodeFromInstance(sdk.instanceId)
