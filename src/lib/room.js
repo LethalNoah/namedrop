@@ -65,7 +65,7 @@ export async function createRoom(hostId, hostName) {
   throw new Error('Could not find a free room code — try again')
 }
 
-export async function joinRoom(code, playerId, name) {
+export async function joinRoom(code, playerId, name, extra = {}) {
   const snap = await get(ref(db, `rooms/${code}`))
   if (!snap.exists()) throw new Error('Room not found — check the code')
   const room = snap.val()
@@ -75,7 +75,7 @@ export async function joinRoom(code, playerId, name) {
   if (room.status !== 'lobby' && room.status !== 'reveal' && !alreadyIn) {
     throw new Error('A round is in progress — try again when it ends')
   }
-  const patch = { name, connected: true }
+  const patch = { name, connected: true, ...extra }
   if (!alreadyIn) patch.joinedAt = serverTimestamp()
   await update(ref(db, `rooms/${code}/players/${playerId}`), patch)
 }
@@ -83,7 +83,7 @@ export async function joinRoom(code, playerId, name) {
 // Discord activities: the first person in claims the room, everyone else
 // joins it. The check-then-set race between two first joiners is harmless
 // (identical room shape; last write's hostId wins).
-export async function joinOrCreateRoom(code, playerId, name) {
+export async function joinOrCreateRoom(code, playerId, name, extra = {}) {
   const snap = await get(ref(db, `rooms/${code}`))
   if (!snap.exists()) {
     await set(ref(db, `rooms/${code}`), {
@@ -93,7 +93,7 @@ export async function joinOrCreateRoom(code, playerId, name) {
       createdAt: serverTimestamp(),
     })
   }
-  await joinRoom(code, playerId, name)
+  await joinRoom(code, playerId, name, extra)
 }
 
 export function subscribeRoom(code, callback) {

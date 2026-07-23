@@ -20,13 +20,13 @@ function codeFromUrl() {
 export default function App() {
   const [joinedCode, setJoinedCode] = useState(null)
   const [room, setRoom] = useState(undefined) // undefined = loading, null = gone
-  const [activityRoom, setActivityRoom] = useState(null)
+  const [activity, setActivity] = useState(null) // { roomCode, user }
   const [activityError, setActivityError] = useState(null)
 
   useEffect(() => {
     if (!isDiscordActivity) return
     initDiscord()
-      .then(setActivityRoom)
+      .then(setActivity)
       .catch((err) => setActivityError(err.message ?? 'Could not connect to Discord'))
   }, [])
 
@@ -67,7 +67,7 @@ export default function App() {
           </main>
         )
       }
-      if (!activityRoom) {
+      if (!activity) {
         return (
           <main className="shell">
             <p className="muted">Connecting to Discord…</p>
@@ -77,7 +77,8 @@ export default function App() {
       return (
         <DiscordJoin
           playerId={playerId}
-          roomCode={activityRoom}
+          roomCode={activity.roomCode}
+          user={activity.user}
           onJoined={handleJoined}
         />
       )

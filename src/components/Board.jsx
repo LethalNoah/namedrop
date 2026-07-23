@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { passTurn, setRoomStatus, submitGuessResult } from '../lib/room'
-import { imageUrl } from '../discord'
+import { imageUrl, useSpeaking } from '../discord'
 
 export default function Board({ room, roomCode, playerId }) {
   const players = Object.entries(room.players ?? {}).sort(
@@ -13,6 +13,7 @@ export default function Board({ room, roomCode, playerId }) {
 
   // 'closed' | 'confirm' | 'flipped'
   const [revealStage, setRevealStage] = useState('closed')
+  const speaking = useSpeaking()
 
   // When the last player has guessed, flip the room to the reveal screen.
   // Disconnected players don't block the end of the round — their card
@@ -75,10 +76,11 @@ export default function Board({ room, roomCode, playerId }) {
           // card (and all cards of finished players) are open.
           const hidden = isMe && !player.hasGuessed
           const isTurn = rotating && id === currentTurnId && !player.hasGuessed
+          const isSpeaking = player.discordId && speaking.has(player.discordId)
           return (
             <div
               key={id}
-              className={`card ${hidden ? 'card-mystery' : ''} ${isTurn ? 'card-turn' : ''}`}
+              className={`card ${hidden ? 'card-mystery' : ''} ${isTurn ? 'card-turn' : ''} ${isSpeaking ? 'speaking' : ''}`}
             >
               {hidden ? (
                 <div className="card-img mystery">?</div>

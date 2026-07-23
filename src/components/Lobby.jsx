@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { leaveRoom, setTurnOrder, startGame } from '../lib/room'
-import { isDiscordActivity } from '../discord'
+import { isDiscordActivity, useSpeaking } from '../discord'
 
 export default function Lobby({ room, roomCode, playerId, onLeft }) {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState(null)
+  const speaking = useSpeaking()
 
   const isHost = room.hostId === playerId
   const players = Object.entries(room.players ?? {}).sort(
@@ -54,14 +55,29 @@ export default function Lobby({ room, roomCode, playerId, onLeft }) {
       )}
 
       <ul className="player-list">
-        {players.map(([id, player]) => (
-          <li key={id} className={player.connected ? '' : 'disconnected'}>
-            <span className={`presence-dot ${player.connected ? 'on' : 'off'}`} />
-            <span className="player-name">{player.name}</span>
-            {id === room.hostId && <span className="badge">host</span>}
-            {id === playerId && <span className="badge you">you</span>}
-          </li>
-        ))}
+        {players.map(([id, player]) => {
+          const isSpeaking = player.discordId && speaking.has(player.discordId)
+          return (
+            <li
+              key={id}
+              className={`${player.connected ? '' : 'disconnected'} ${isSpeaking ? 'speaking' : ''}`}
+            >
+              {player.avatarUrl ? (
+                <img
+                  className="avatar"
+                  src={player.avatarUrl}
+                  alt=""
+                  onError={(e) => (e.target.style.display = 'none')}
+                />
+              ) : (
+                <span className={`presence-dot ${player.connected ? 'on' : 'off'}`} />
+              )}
+              <span className="player-name">{player.name}</span>
+              {id === room.hostId && <span className="badge">host</span>}
+              {id === playerId && <span className="badge you">you</span>}
+            </li>
+          )
+        })}
       </ul>
 
       <div className="toggle-row">

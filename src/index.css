@@ -465,6 +465,23 @@ input:focus {
   background: rgba(240, 112, 104, 0.12);
 }
 
+/* Discord speaking indicator — mirrors Discord's own green ring */
+.avatar {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.player-list li.speaking {
+  outline: 2px solid #23a55a;
+}
+
+.card.speaking {
+  outline: 3px solid #23a55a;
+  box-shadow: 0 0 16px rgba(35, 165, 90, 0.45);
+}
+
 .offline-chip {
   display: inline-block;
   margin-left: 0.4rem;
