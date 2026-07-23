@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { getSavedName, saveName } from '../identity'
 import { joinOrCreateRoom } from '../lib/room'
-import { searchWikipedia } from '../lib/wikipedia'
 
 function withTimeout(promise, ms, label) {
   return Promise.race([
@@ -18,58 +17,6 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
   const [name, setName] = useState(getSavedName())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  const [diag, setDiag] = useState(null)
-
-  // Self-test each proxy pipe separately so a failure names its culprit
-  // on screen instead of hanging silently.
-  useEffect(() => {
-    ;(async () => {
-      const probe = async (fn) => {
-        try {
-          const result = await withTimeout(fn(), 6000, 'timeout')
-          return result ?? 'ok'
-        } catch (err) {
-          return `FAIL: ${err.message ?? err.name ?? 'unknown'}`
-        }
-      }
-      const [viaPatch, viaProxyPath, wikipedia, websocket] = await Promise.all([
-        probe(async () => {
-          const res = await fetch(
-            'https://namedrop-8bf7f-default-rtdb.firebaseio.com/rooms.json?shallow=true',
-          )
-          return `http ${res.status}`
-        }),
-        probe(async () => {
-          const res = await fetch(
-            '/.proxy/firebase/namedrop-8bf7f-default-rtdb/rooms.json?shallow=true',
-          )
-          return `http ${res.status}`
-        }),
-        probe(async () => {
-          const results = await searchWikipedia('test')
-          return `${results.length} results`
-        }),
-        probe(
-          () =>
-            new Promise((resolve, reject) => {
-              let opened = false
-              const ws = new WebSocket(
-                'wss://namedrop-8bf7f-default-rtdb.firebaseio.com/.ws?v=5&ns=namedrop-8bf7f-default-rtdb',
-              )
-              ws.onopen = () => {
-                opened = true
-                ws.close()
-                resolve('open')
-              }
-              ws.onclose = (e) => {
-                if (!opened) reject(new Error(`closed, code ${e.code}`))
-              }
-            }),
-        ),
-      ])
-      setDiag({ viaPatch, viaProxyPath, wikipedia, websocket })
-    })()
-  }, [])
 
   async function handleJoin(event) {
     event.preventDefault()
@@ -86,7 +33,7 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
       await withTimeout(
         joinOrCreateRoom(roomCode, playerId, trimmed),
         25000,
-        "Couldn't reach the game database — try Jump in once more; if it keeps failing, the /firebase URL mapping is likely wrong",
+        "Couldn't reach the game — try Jump in once more",
       )
       onJoined(roomCode)
     } catch (err) {
@@ -114,7 +61,7 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           />
         </label>
         <button className="primary" type="submit" disabled={busy}>
-          Jump in
+          {busy ? 'Joining…' : 'Jump in'}
         </button>
       </form>
       {error && <p className="error">{error}</p>}
@@ -123,20 +70,6 @@ export default function DiscordJoin({ playerId, roomCode, onJoined }) {
           You'll be able to join as soon as the current round wraps up.
         </p>
       )}
-      {diag && (
-        <p className="muted" style={{ fontSize: '0.75rem', textAlign: 'left' }}>
-          db-patched: {diag.viaPatch}
-          <br />
-          db-direct-proxy: {diag.viaProxyPath}
-          <br />
-          wikipedia: {diag.wikipedia}
-          <br />
-          websocket: {diag.websocket}
-        </p>
-      )}
-      <p className="muted" style={{ fontSize: '0.75rem' }}>
-        build 10
-      </p>
     </main>
   )
 }
