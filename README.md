@@ -1,5 +1,7 @@
 # Namedrop
 
+![Namedrop — everyone knows who you are, except you](docs/cover.png)
+
 **Play it: https://namedrop-mauve.vercel.app**
 
 A real-time multiplayer party game for playing with friends over a voice call — a digital take on Hedbanz / the card-on-the-forehead game, where the answer pool is *anyone on Wikipedia*.
