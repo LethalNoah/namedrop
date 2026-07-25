@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Namedrop — Privacy Policy</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #14141c; color: #eceaf4;
+           max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; line-height: 1.6; }
+    h1 { font-size: 1.8rem; } h2 { font-size: 1.2rem; margin-top: 2rem; }
+    a { color: #7c6cf0; } .muted { color: #9a97ac; }
+  </style>
+</head>
+<body>
+  <h1>Namedrop — Privacy Policy</h1>
+  <p class="muted">Effective July 23, 2026</p>
+
+  <p>Namedrop is a free multiplayer party game playable in a web browser and as a
+  Discord Activity. It is designed to store as little as possible.</p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Display name</strong> — either a name you type, or (in the Discord
+    Activity, with your consent via Discord's authorization prompt) your Discord
+    display name.</li>
+    <li><strong>Discord user ID and avatar URL</strong> — only in the Discord
+    Activity, used to show your avatar and light up your card while you speak.</li>
+    <li><strong>Game state</strong> — the room you're in, the characters players
+    assign each other (public Wikipedia article titles and image links), turn and
+    scoring state.</li>
+  </ul>
+  <p>We do not collect email addresses, passwords, payment details, messages, or
+  audio. The speaking indicator uses Discord's start/stop speaking events only —
+  no voice audio is ever received or processed by Namedrop.</p>
+
+  <h2>Where it lives and how long</h2>
+  <p>Game state is stored in Google Firebase Realtime Database. Rooms are
+  automatically deleted roughly 24 hours after creation. Your display name is
+  also remembered in your own browser's local storage so it can be pre-filled
+  next time; you can clear it by clearing site data.</p>
+
+  <h2>Discord authorization</h2>
+  <p>In the Discord Activity, Namedrop requests the <code>identify</code> and
+  <code>rpc.voice.read</code> scopes to greet you by name and show speaking
+  indicators. The authorization token is used only during your session and is
+  not stored on our servers.</p>
+
+  <h2>Third parties</h2>
+  <p>Namedrop is hosted on Vercel, stores game state in Google Firebase, and
+  fetches character search results and images from Wikipedia (Wikimedia
+  Foundation) servers. Each provider processes requests under its own privacy
+  policy. Namedrop contains no advertising and no analytics trackers, and never
+  sells or shares personal data.</p>
+
+  <h2>Children</h2>
+  <p>Namedrop is not directed at children under 13 and does not knowingly
+  collect personal information from them.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or deletion requests: open an issue at
+  <a href="https://github.com/LethalNoah/namedrop">github.com/LethalNoah/namedrop</a>.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the updated version will be posted at this URL with
+  a new effective date.</p>
+</body>
+</html>
