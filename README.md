@@ -62,4 +62,4 @@ To deploy: `npm run build`, then serve `dist/` + `api/` on Vercel (project `name
 - [x] Discord Activity phase 2: OAuth identity auto-join + speaking indicators
 - [ ] Themed pool mode — everyone secretly seeds characters into a shared pot
 - [x] Card accent colors, picked per player in the lobby
-- [ ] Discord app verification for public launch
+- [x] Discord app verification — approved; playable in servers of any size
