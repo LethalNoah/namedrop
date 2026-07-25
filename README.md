@@ -2,7 +2,9 @@
 
 ![Namedrop — everyone knows who you are, except you](docs/cover.png)
 
-**Play it: https://namedrop-mauve.vercel.app** — or as a Discord Activity, embedded right in a voice channel.
+**Play it: https://namedrop-mauve.vercel.app** — or as a **verified Discord Activity**, embedded right in a voice channel.
+
+> **Status: launched.** Web + mobile browser + Discord (verified, works in servers of any size — members launch it straight from the voice-channel Activities menu, no developer required).
 
 A real-time multiplayer party game for playing with friends over a voice call — a digital take on Hedbanz / the card-on-the-forehead game, where the answer pool is *anyone on Wikipedia*.
 
@@ -19,7 +21,7 @@ Everyone can see who you are — except you. Each round, players secretly assign
 
 ## Discord Activity mode
 
-The same app doubles as a Discord Activity. Inside a voice channel:
+The same app doubles as a **verified** Discord Activity — installed to a server, any member can launch it from a voice channel's Activities menu. Inside:
 
 - The **voice channel is the room** — no codes, no links; everyone on the call just clicks in
 - **You join as yourself** — Discord OAuth identity means no typed names; your Discord display name and avatar carry over automatically
@@ -60,6 +62,10 @@ To deploy: `npm run build`, then serve `dist/` + `api/` on Vercel (project `name
 - [x] Deployed to Vercel + Firebase security rules locked down
 - [x] Discord Activity phase 1: launchable in a voice channel, full game playable in-sandbox
 - [x] Discord Activity phase 2: OAuth identity auto-join + speaking indicators
-- [ ] Themed pool mode — everyone secretly seeds characters into a shared pot
-- [x] Card accent colors, picked per player in the lobby
-- [x] Discord app verification — approved; playable in servers of any size
+- [x] Playtest round 2 refinements: majority-countdown voting with undoable votes, card accent colors (14-color palette, grey default), art-deco background
+- [x] Discord app verification — approved; installed server-wide, launchable by any member without the developer
+
+### Future ideas
+
+- Themed pool mode — everyone secretly seeds characters into a shared pot
+- Deeper card customization (patterns, card backs)
