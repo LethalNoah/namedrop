@@ -487,6 +487,35 @@ input:focus {
   color: var(--muted);
 }
 
+.vote-undo {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  margin-left: 0.3rem;
+}
+
+/* Card color picker */
+.color-row {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  padding: 0;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+
+.swatch.sel {
+  border-color: var(--text);
+  transform: scale(1.15);
+}
+
 /* Result badges */
 .result-badge {
   display: inline-block;

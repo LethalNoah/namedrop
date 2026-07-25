@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { leaveRoom, setTurnOrder, startGame } from '../lib/room'
+import { leaveRoom, setPlayerColor, setTurnOrder, startGame } from '../lib/room'
 import { isDiscordActivity, useSpeaking } from '../discord'
+
+const CARD_COLORS = [
+  '#7c6cf0', '#f07068', '#f0b856', '#4fd08c',
+  '#56b8f0', '#f068c0', '#8ce0f0', '#c8f068',
+]
 
 export default function Lobby({ room, roomCode, playerId, onLeft }) {
   const [copied, setCopied] = useState(false)
@@ -61,6 +66,7 @@ export default function Lobby({ room, roomCode, playerId, onLeft }) {
             <li
               key={id}
               className={`${player.connected ? '' : 'disconnected'} ${isSpeaking ? 'speaking' : ''}`}
+              style={player.color ? { borderLeft: `4px solid ${player.color}` } : undefined}
             >
               {player.avatarUrl ? (
                 <img
@@ -79,6 +85,21 @@ export default function Lobby({ room, roomCode, playerId, onLeft }) {
           )
         })}
       </ul>
+
+      <div className="toggle-row">
+        <span className="toggle-label">Card color</span>
+        <div className="color-row">
+          {CARD_COLORS.map((color) => (
+            <button
+              key={color}
+              className={`swatch ${room.players?.[playerId]?.color === color ? 'sel' : ''}`}
+              style={{ background: color }}
+              aria-label={`card color ${color}`}
+              onClick={() => setPlayerColor(roomCode, playerId, color)}
+            />
+          ))}
+        </div>
+      </div>
 
       <div className="toggle-row">
         <span className="toggle-label">Turns</span>

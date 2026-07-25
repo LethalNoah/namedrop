@@ -4,10 +4,14 @@ import {
   castVote,
   passTurn,
   requestGuessVote,
+  retractVote,
   setRoomStatus,
   submitGuessResult,
 } from '../lib/room'
 import { imageUrl, useSpeaking } from '../discord'
+
+const GRACE_MS = 5000
+const COUNTDOWN_MS = 5000
 
 export default function Board({ room, roomCode, playerId }) {
   const players = Object.entries(room.players ?? {}).sort(
@@ -22,6 +26,13 @@ export default function Board({ room, roomCode, playerId }) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [celebrate, setCelebrate] = useState(false)
   const submittingRef = useRef(false)
+
+  // Ticks so vote countdowns re-render as time passes
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(timer)
+  }, [])
 
   // When the last player has guessed, flip the room to the reveal screen.
   // Disconnected players don't block the end of the round.
@@ -51,13 +62,46 @@ export default function Board({ room, roomCode, playerId }) {
     return { cast: voters.filter((id) => votes[id]).length, needed: voters.length }
   }
 
-  // The guesser's own client applies the unanimous result: card flips,
-  // finish order assigned, turn passes on.
-  const myVoteDone =
-    me?.pendingGuess && !me.hasGuessed &&
-    eligibleVoters(playerId).every((id) => (me.votes ?? {})[id])
+  // Reveal timing: unanimous ✓ reveals immediately; a strict majority
+  // starts a 5s grace + 5s visible countdown. Losing the majority (votes
+  // undone) cancels the countdown. Deadlines are derived identically on
+  // every client from shared vote state, so countdowns stay in sync.
+  const deadlinesRef = useRef({})
   useEffect(() => {
-    if (!myVoteDone || submittingRef.current) return
+    players.forEach(([id, p]) => {
+      const claiming = p.pendingGuess && !p.hasGuessed
+      if (!claiming) {
+        delete deadlinesRef.current[id]
+        return
+      }
+      const tally = voteTally(id)
+      const unanimous = tally.cast === tally.needed // includes needed === 0
+      const majority = tally.cast * 2 > tally.needed
+      if (unanimous) {
+        deadlinesRef.current[id] = 0 // immediate
+      } else if (majority) {
+        deadlinesRef.current[id] ??= Date.now() + GRACE_MS + COUNTDOWN_MS
+      } else {
+        delete deadlinesRef.current[id]
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room])
+
+  function countdownFor(id) {
+    const deadline = deadlinesRef.current[id]
+    if (deadline === undefined || deadline === 0) return null
+    const remaining = deadline - now
+    if (remaining > COUNTDOWN_MS || remaining <= 0) return null
+    return Math.ceil(remaining / 1000)
+  }
+
+  // The guesser's own client applies the result once their deadline passes.
+  const myDeadline =
+    me?.pendingGuess && !me.hasGuessed ? deadlinesRef.current[playerId] : undefined
+  const shouldSubmit = myDeadline !== undefined && now >= myDeadline
+  useEffect(() => {
+    if (!shouldSubmit || submittingRef.current) return
     submittingRef.current = true
     ;(async () => {
       const finishedCount = players.filter(([, p]) => p.correct).length
@@ -69,9 +113,10 @@ export default function Board({ room, roomCode, playerId }) {
       submittingRef.current = false
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myVoteDone])
+  }, [shouldSubmit])
 
-  const pendingTally = me?.pendingGuess ? voteTally(playerId) : null
+  const pendingTally = me?.pendingGuess && !me.hasGuessed ? voteTally(playerId) : null
+  const myCountdown = pendingTally ? countdownFor(playerId) : null
 
   return (
     <main className="shell shell-wide">
@@ -98,11 +143,12 @@ export default function Board({ room, roomCode, playerId }) {
         </div>
       )}
 
-      {pendingTally && !me.hasGuessed && (
+      {pendingTally && (
         <div className="vote-bar">
           <span>
-            🗳️ Waiting for the group to confirm… ({pendingTally.cast}/
-            {pendingTally.needed})
+            {myCountdown !== null
+              ? `⏳ Revealing in ${myCountdown}…`
+              : `🗳️ Waiting for the group to confirm… (${pendingTally.cast}/${pendingTally.needed})`}
           </span>
           <button onClick={() => cancelGuessVote(roomCode, playerId)}>
             Withdraw
@@ -120,10 +166,12 @@ export default function Board({ room, roomCode, playerId }) {
           const claiming = player.pendingGuess && !player.hasGuessed
           const myVote = claiming ? Boolean((player.votes ?? {})[playerId]) : false
           const tally = claiming ? voteTally(id) : null
+          const countdown = claiming ? countdownFor(id) : null
           return (
             <div
               key={id}
               className={`card ${hidden ? 'card-mystery' : ''} ${isTurn ? 'card-turn' : ''} ${isSpeaking ? 'speaking' : ''}`}
+              style={player.color ? { borderTop: `5px solid ${player.color}` } : undefined}
             >
               {hidden ? (
                 <div className="card-img mystery">?</div>
@@ -152,10 +200,19 @@ export default function Board({ room, roomCode, playerId }) {
                     {player.correct ? `✓ got it ${ordinal(player.order)}` : '✗ missed'}
                   </div>
                 )}
-                {claiming && !isMe && (
+                {claiming && countdown !== null && (
+                  <div className="vote-note">⏳ revealing in {countdown}…</div>
+                )}
+                {claiming && countdown === null && !isMe && (
                   myVote ? (
                     <div className="vote-note">
-                      you voted ✓ ({tally.cast}/{tally.needed})
+                      you voted ✓ ({tally.cast}/{tally.needed}){' '}
+                      <button
+                        className="vote-undo"
+                        onClick={() => retractVote(roomCode, id, playerId)}
+                      >
+                        undo
+                      </button>
                     </div>
                   ) : (
                     <div className="vote-row">
@@ -174,7 +231,7 @@ export default function Board({ room, roomCode, playerId }) {
                     </div>
                   )
                 )}
-                {claiming && isMe && (
+                {claiming && countdown === null && isMe && (
                   <div className="vote-note">
                     🗳️ {tally.cast}/{tally.needed} confirmed
                   </div>
@@ -202,7 +259,7 @@ export default function Board({ room, roomCode, playerId }) {
             <h2>Say your guess out loud!</h2>
             <p className="muted">
               Tell everyone who you think you are — then ask for votes. If the
-              whole group confirms it, your card flips.
+              group confirms it, your card flips.
             </p>
             <button
               className="primary"

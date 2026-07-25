@@ -26,7 +26,10 @@ export default function RevealScreen({ room, roomCode, playerId }) {
       <h1>🎉 Round over!</h1>
       <ul className="reveal-list">
         {players.map(([id, player]) => (
-          <li key={id}>
+          <li
+            key={id}
+            style={player.color ? { borderLeft: `4px solid ${player.color}` } : undefined}
+          >
             {player.character?.thumbnailUrl ? (
               <img src={imageUrl(player.character.thumbnailUrl)} alt="" />
             ) : (

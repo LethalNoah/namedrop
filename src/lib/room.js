@@ -229,3 +229,11 @@ export async function castVote(code, guesserId, voterId, approve) {
     await cancelGuessVote(code, guesserId)
   }
 }
+
+export async function retractVote(code, guesserId, voterId) {
+  await remove(ref(db, `rooms/${code}/players/${guesserId}/votes/${voterId}`))
+}
+
+export async function setPlayerColor(code, playerId, color) {
+  await update(ref(db, `rooms/${code}/players/${playerId}`), { color })
+}

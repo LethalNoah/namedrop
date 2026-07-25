@@ -55,11 +55,11 @@ To deploy: `npm run build`, then serve `dist/` + `api/` on Vercel (project `name
 - [x] Assignment ring + "you're picking for X" screen
 - [x] Live Wikipedia search + confirm UI (including non-free lead images via `pilicense=any`)
 - [x] Board with the hide-your-own-card rule
-- [x] Turns, vote-to-reveal (group confirms your guess), medals, end-of-round + rematch
+- [x] Turns, vote-to-reveal (unanimous = instant; majority triggers a 10s countdown that cancels if votes are withdrawn), medals, end-of-round + rematch
 - [x] Polish: turn-mode setting, disconnect handling, stale-room cleanup, mobile layout, reveal animations
 - [x] Deployed to Vercel + Firebase security rules locked down
 - [x] Discord Activity phase 1: launchable in a voice channel, full game playable in-sandbox
 - [x] Discord Activity phase 2: OAuth identity auto-join + speaking indicators
 - [ ] Themed pool mode — everyone secretly seeds characters into a shared pot
-- [ ] Card customization options
+- [x] Card accent colors, picked per player in the lobby
 - [ ] Discord app verification for public launch
