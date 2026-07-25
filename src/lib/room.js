@@ -14,6 +14,10 @@ import { db } from '../firebase'
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const CODE_LENGTH = 4
 
+// Every player gets a color from the moment they join (grey by default,
+// changeable via the lobby swatches).
+export const DEFAULT_COLOR = '#8a8aa0'
+
 function randomCode() {
   let code = ''
   for (let i = 0; i < CODE_LENGTH; i++) {
@@ -57,7 +61,12 @@ export async function createRoom(hostId, hostName) {
       turnOrder: 'rotating',
       createdAt: serverTimestamp(),
       players: {
-        [hostId]: { name: hostName, connected: true, joinedAt: serverTimestamp() },
+        [hostId]: {
+          name: hostName,
+          connected: true,
+          joinedAt: serverTimestamp(),
+          color: DEFAULT_COLOR,
+        },
       },
     })
     return code
@@ -76,7 +85,10 @@ export async function joinRoom(code, playerId, name, extra = {}) {
     throw new Error('A round is in progress — try again when it ends')
   }
   const patch = { name, connected: true, ...extra }
-  if (!alreadyIn) patch.joinedAt = serverTimestamp()
+  if (!alreadyIn) {
+    patch.joinedAt = serverTimestamp()
+    if (!patch.color) patch.color = DEFAULT_COLOR
+  }
   await update(ref(db, `rooms/${code}/players/${playerId}`), patch)
 }
 

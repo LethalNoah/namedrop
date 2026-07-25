@@ -3,8 +3,8 @@ import { leaveRoom, setPlayerColor, setTurnOrder, startGame } from '../lib/room'
 import { isDiscordActivity, useSpeaking } from '../discord'
 
 const CARD_COLORS = [
-  '#7c6cf0', '#f07068', '#f0b856', '#4fd08c',
-  '#56b8f0', '#f068c0', '#8ce0f0', '#c8f068',
+  '#8a8aa0', '#f0f0f0', '#7c6cf0', '#b868f0', '#f068c0', '#f07068', '#f09848',
+  '#f0b856', '#e8c878', '#c8f068', '#4fd08c', '#68f0c8', '#8ce0f0', '#56b8f0',
 ]
 
 export default function Lobby({ room, roomCode, playerId, onLeft }) {

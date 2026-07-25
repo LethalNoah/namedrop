@@ -35,16 +35,19 @@ html {
 body {
   margin: 0;
   background-color: var(--bg);
-  /* Subtle art-deco fan lattice: two offset layers of repeating arcs
-     (fish-scale motif) plus a soft glow at the top for depth. Pure CSS —
-     no image requests, so it works identically inside Discord's sandbox. */
+  /* Subtle art-deco fan lattice: two offset layers of large repeating
+     arcs (fish-scale motif) that dissolve into solid background partway
+     down the page, plus a soft glow at the top. The fade-out keeps the
+     tiling from reading as repetitive. Pure CSS — no image requests, so
+     it works identically inside Discord's sandbox. */
   background-image:
-    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(124, 108, 240, 0.07), transparent 60%),
-    radial-gradient(circle at 50% 0, transparent 58%, rgba(124, 108, 240, 0.045) 59%, rgba(124, 108, 240, 0.045) 63%, transparent 64%),
-    radial-gradient(circle at 50% 0, transparent 58%, rgba(124, 108, 240, 0.045) 59%, rgba(124, 108, 240, 0.045) 63%, transparent 64%);
-  background-size: 100% 100%, 84px 42px, 84px 42px;
-  background-position: 0 0, 0 0, 42px 21px;
-  background-repeat: no-repeat, repeat, repeat;
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(124, 108, 240, 0.06), transparent 60%),
+    linear-gradient(180deg, rgba(20, 20, 28, 0) 0%, rgba(20, 20, 28, 0) 25%, #14141c 70%),
+    radial-gradient(circle at 50% 0, transparent 58%, rgba(124, 108, 240, 0.035) 59%, rgba(124, 108, 240, 0.035) 62%, transparent 63%),
+    radial-gradient(circle at 50% 0, transparent 58%, rgba(124, 108, 240, 0.035) 59%, rgba(124, 108, 240, 0.035) 62%, transparent 63%);
+  background-size: 100% 100%, 100% 100%, 160px 80px, 160px 80px;
+  background-position: 0 0, 0 0, 0 0, 80px 40px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
   color: var(--text);
 }
 
