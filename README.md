@@ -6,7 +6,7 @@
 
 A real-time multiplayer party game for playing with friends over a voice call — a digital take on Hedbanz / the card-on-the-forehead game, where the answer pool is *anyone on Wikipedia*.
 
-Everyone can see who you are — except you. Each round, players secretly assign each other a famous person (real or fictional) by searching Wikipedia live. Then you ask yes/no questions out loud to figure out who you are. First to call it and flip their card wins the round.
+Everyone can see who you are — except you. Each round, players secretly assign each other a famous person (real or fictional) by searching Wikipedia live. Then you ask yes/no questions out loud to figure out who you are. When you think you know, say it out loud — if the whole group votes that you're right, your card flips and you're on the podium. Guess wrong and you just keep playing.
 
 ## How it works
 
@@ -55,11 +55,11 @@ To deploy: `npm run build`, then serve `dist/` + `api/` on Vercel (project `name
 - [x] Assignment ring + "you're picking for X" screen
 - [x] Live Wikipedia search + confirm UI (including non-free lead images via `pilicense=any`)
 - [x] Board with the hide-your-own-card rule
-- [x] Turns, flip-to-win reveal, medals, end-of-round + rematch
+- [x] Turns, vote-to-reveal (group confirms your guess), medals, end-of-round + rematch
 - [x] Polish: turn-mode setting, disconnect handling, stale-room cleanup, mobile layout, reveal animations
 - [x] Deployed to Vercel + Firebase security rules locked down
 - [x] Discord Activity phase 1: launchable in a voice channel, full game playable in-sandbox
 - [x] Discord Activity phase 2: OAuth identity auto-join + speaking indicators
 - [ ] Themed pool mode — everyone secretly seeds characters into a shared pot
-- [ ] Group-confirm reveal option
-- [ ] Discord app verification for public launch (someday, maybe)
+- [ ] Card customization options
+- [ ] Discord app verification for public launch

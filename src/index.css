@@ -445,6 +445,48 @@ input:focus {
   outline: 2px solid var(--ok);
 }
 
+/* Vote-to-reveal */
+.vote-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+}
+
+.vote-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.vote-row button {
+  flex: 1;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+.vote-yes {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.vote-no {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.vote-note {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 /* Result badges */
 .result-badge {
   display: inline-block;

@@ -78,19 +78,24 @@ export default function AssignScreen({ room, roomCode, playerId }) {
           <strong>{target.character.title}</strong>. Waiting for the others…
         </p>
         <ul className="player-list">
-          {players.map(([id, player]) => (
-            <li key={id}>
-              <span className="player-name">
-                {player.name}
-                {player.connected === false && (
-                  <span className="offline-chip">offline</span>
-                )}
-              </span>
-              <span className={player.character ? 'status-done' : 'status-waiting'}>
-                {player.character ? '✓ picked' : 'choosing…'}
-              </span>
-            </li>
-          ))}
+          {players.map(([id, player]) => {
+            // Show whether this player has finished PICKING for their
+            // assignee — not whether someone has picked for them.
+            const donePicking = Boolean(room.players?.[player.assignsTo]?.character)
+            return (
+              <li key={id}>
+                <span className="player-name">
+                  {player.name}
+                  {player.connected === false && (
+                    <span className="offline-chip">offline</span>
+                  )}
+                </span>
+                <span className={donePicking ? 'status-done' : 'status-waiting'}>
+                  {donePicking ? '✓ picked' : 'choosing…'}
+                </span>
+              </li>
+            )
+          })}
         </ul>
         {/* Escape hatch if a picker dropped and the round can't finish */}
         {isHost && (

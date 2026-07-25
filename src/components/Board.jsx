@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react'
-import { passTurn, setRoomStatus, submitGuessResult } from '../lib/room'
+import { useEffect, useRef, useState } from 'react'
+import {
+  cancelGuessVote,
+  castVote,
+  passTurn,
+  requestGuessVote,
+  setRoomStatus,
+  submitGuessResult,
+} from '../lib/room'
 import { imageUrl, useSpeaking } from '../discord'
 
 export default function Board({ room, roomCode, playerId }) {
@@ -10,38 +17,61 @@ export default function Board({ room, roomCode, playerId }) {
   const rotating = room.turnOrder === 'rotating'
   const currentTurnId = rotating ? room.currentTurn : null
   const myTurn = currentTurnId === playerId
-
-  // 'closed' | 'confirm' | 'flipped'
-  const [revealStage, setRevealStage] = useState('closed')
   const speaking = useSpeaking()
 
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [celebrate, setCelebrate] = useState(false)
+  const submittingRef = useRef(false)
+
   // When the last player has guessed, flip the room to the reveal screen.
-  // Disconnected players don't block the end of the round — their card
-  // stays in play, but the group isn't stuck waiting on them.
-  // Any client may fire this; the write is idempotent.
+  // Disconnected players don't block the end of the round.
   const everyoneGuessed =
     players.length > 0 &&
     players.some(([, p]) => p.hasGuessed) &&
     players.every(([, p]) => p.hasGuessed || p.connected === false)
   useEffect(() => {
     if (room.status === 'playing' && everyoneGuessed) {
-      // Small delay so the last flipper gets a moment with their card
+      // Small delay so the last winner gets a moment with their card
       // before every screen jumps to the round-over view.
       const timer = setTimeout(() => setRoomStatus(roomCode, 'reveal'), 2500)
       return () => clearTimeout(timer)
     }
   }, [room.status, everyoneGuessed, roomCode])
 
-  // Flipping IS winning: the guess was already confirmed out loud by the
-  // group (they can all see the card). Wrong guesses just never flip.
-  async function handleFlip() {
-    const finishedCount = players.filter(([, p]) => p.correct).length
-    await submitGuessResult(roomCode, playerId, true, finishedCount + 1)
-    if (rotating && myTurn) {
-      await passTurn(roomCode, room.players, playerId)
-    }
-    setRevealStage('flipped')
+  // Everyone except the guesser who is still connected gets a vote.
+  function eligibleVoters(guesserId) {
+    return players
+      .filter(([id, p]) => id !== guesserId && p.connected !== false)
+      .map(([id]) => id)
   }
+
+  function voteTally(guesserId) {
+    const votes = room.players?.[guesserId]?.votes ?? {}
+    const voters = eligibleVoters(guesserId)
+    return { cast: voters.filter((id) => votes[id]).length, needed: voters.length }
+  }
+
+  // The guesser's own client applies the unanimous result: card flips,
+  // finish order assigned, turn passes on.
+  const myVoteDone =
+    me?.pendingGuess && !me.hasGuessed &&
+    eligibleVoters(playerId).every((id) => (me.votes ?? {})[id])
+  useEffect(() => {
+    if (!myVoteDone || submittingRef.current) return
+    submittingRef.current = true
+    ;(async () => {
+      const finishedCount = players.filter(([, p]) => p.correct).length
+      await submitGuessResult(roomCode, playerId, true, finishedCount + 1)
+      if (rotating && myTurn) {
+        await passTurn(roomCode, room.players, playerId)
+      }
+      setCelebrate(true)
+      submittingRef.current = false
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myVoteDone])
+
+  const pendingTally = me?.pendingGuess ? voteTally(playerId) : null
 
   return (
     <main className="shell shell-wide">
@@ -60,7 +90,6 @@ export default function Board({ room, roomCode, playerId }) {
                 ? ' is asking (offline)'
                 : ' is asking'}
           </span>
-          {/* If the current asker dropped, let anyone move the game along */}
           {(myTurn || room.players[currentTurnId].connected === false) && (
             <button onClick={() => passTurn(roomCode, room.players, currentTurnId)}>
               Pass turn
@@ -69,14 +98,28 @@ export default function Board({ room, roomCode, playerId }) {
         </div>
       )}
 
+      {pendingTally && !me.hasGuessed && (
+        <div className="vote-bar">
+          <span>
+            🗳️ Waiting for the group to confirm… ({pendingTally.cast}/
+            {pendingTally.needed})
+          </span>
+          <button onClick={() => cancelGuessVote(roomCode, playerId)}>
+            Withdraw
+          </button>
+        </div>
+      )}
+
       <div className="board">
         {players.map(([id, player]) => {
           const isMe = id === playerId
-          // Hide your own card until you've flipped it; everyone else's
-          // card (and all cards of finished players) are open.
+          // Hide your own card until the group confirms your guess.
           const hidden = isMe && !player.hasGuessed
           const isTurn = rotating && id === currentTurnId && !player.hasGuessed
           const isSpeaking = player.discordId && speaking.has(player.discordId)
+          const claiming = player.pendingGuess && !player.hasGuessed
+          const myVote = claiming ? Boolean((player.votes ?? {})[playerId]) : false
+          const tally = claiming ? voteTally(id) : null
           return (
             <div
               key={id}
@@ -109,57 +152,90 @@ export default function Board({ room, roomCode, playerId }) {
                     {player.correct ? `✓ got it ${ordinal(player.order)}` : '✗ missed'}
                   </div>
                 )}
+                {claiming && !isMe && (
+                  myVote ? (
+                    <div className="vote-note">
+                      you voted ✓ ({tally.cast}/{tally.needed})
+                    </div>
+                  ) : (
+                    <div className="vote-row">
+                      <button
+                        className="vote-yes"
+                        onClick={() => castVote(roomCode, id, playerId, true)}
+                      >
+                        ✓ right
+                      </button>
+                      <button
+                        className="vote-no"
+                        onClick={() => castVote(roomCode, id, playerId, false)}
+                      >
+                        ✗ nope
+                      </button>
+                    </div>
+                  )
+                )}
+                {claiming && isMe && (
+                  <div className="vote-note">
+                    🗳️ {tally.cast}/{tally.needed} confirmed
+                  </div>
+                )}
               </div>
             </div>
           )
         })}
       </div>
 
-      {me && !me.hasGuessed && (
+      {me && !me.hasGuessed && !me.pendingGuess && (
         // In take-turns mode you can only call it on your own turn
         <button
           className="primary"
           disabled={rotating && !myTurn}
-          onClick={() => setRevealStage('confirm')}
+          onClick={() => setConfirmOpen(true)}
         >
           {rotating && !myTurn ? "I've got it! (wait for your turn)" : "I've got it!"}
         </button>
       )}
 
-      {revealStage !== 'closed' && me && (
-        <div className="modal-backdrop" onClick={() => revealStage === 'confirm' && setRevealStage('closed')}>
+      {confirmOpen && me && (
+        <div className="modal-backdrop" onClick={() => setConfirmOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            {revealStage === 'confirm' ? (
-              <>
-                <h2>Say your guess out loud!</h2>
-                <p className="muted">
-                  Tell everyone who you think you are. Once the group confirms
-                  you've got it, flip your card to lock in your win.
-                </p>
-                <button className="primary" onClick={handleFlip}>
-                  Flip my card
-                </button>
-                <button className="ghost" onClick={() => setRevealStage('closed')}>
-                  Never mind
-                </button>
-              </>
-            ) : (
-              <>
-                <h2>You are…</h2>
-                {me.character?.thumbnailUrl && (
-                  <img
-                    className="modal-img"
-                    src={imageUrl(me.character.thumbnailUrl)}
-                    alt={me.character.title}
-                  />
-                )}
-                <h2 className="accent">{me.character?.title}</h2>
-                <p className="result-badge win">🎉 Got it {ordinal(me.order)}</p>
-                <button className="primary" onClick={() => setRevealStage('closed')}>
-                  Back to the board
-                </button>
-              </>
+            <h2>Say your guess out loud!</h2>
+            <p className="muted">
+              Tell everyone who you think you are — then ask for votes. If the
+              whole group confirms it, your card flips.
+            </p>
+            <button
+              className="primary"
+              onClick={() => {
+                requestGuessVote(roomCode, playerId)
+                setConfirmOpen(false)
+              }}
+            >
+              Ask for votes
+            </button>
+            <button className="ghost" onClick={() => setConfirmOpen(false)}>
+              Never mind
+            </button>
+          </div>
+        </div>
+      )}
+
+      {celebrate && me && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h2>You are…</h2>
+            {me.character?.thumbnailUrl && (
+              <img
+                className="modal-img"
+                src={imageUrl(me.character.thumbnailUrl)}
+                alt={me.character.title}
+              />
             )}
+            <h2 className="accent">{me.character?.title}</h2>
+            <p className="result-badge win">🎉 Got it {ordinal(me.order)}</p>
+            <button className="primary" onClick={() => setCelebrate(false)}>
+              Back to the board
+            </button>
           </div>
         </div>
       )}

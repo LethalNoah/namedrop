@@ -146,6 +146,8 @@ export async function startGame(code) {
     patch[`players/${id}/hasGuessed`] = false
     patch[`players/${id}/correct`] = null
     patch[`players/${id}/order`] = null
+    patch[`players/${id}/pendingGuess`] = null
+    patch[`players/${id}/votes`] = null
   })
   await update(ref(db, `rooms/${code}`), patch)
 }
@@ -195,5 +197,35 @@ export async function submitGuessResult(code, playerId, wasCorrect, order) {
     hasGuessed: true,
     correct: wasCorrect,
     order: wasCorrect ? order : null,
+    pendingGuess: null,
+    votes: null,
   })
+}
+
+// --- Vote-to-reveal: the guesser says it out loud, everyone else votes.
+// A unanimous yes flips the card; a single no cancels the claim and the
+// guesser plays on (their card was never revealed, so nothing is spoiled).
+
+export async function requestGuessVote(code, playerId) {
+  await update(ref(db, `rooms/${code}/players/${playerId}`), {
+    pendingGuess: true,
+    votes: null,
+  })
+}
+
+export async function cancelGuessVote(code, playerId) {
+  await update(ref(db, `rooms/${code}/players/${playerId}`), {
+    pendingGuess: null,
+    votes: null,
+  })
+}
+
+export async function castVote(code, guesserId, voterId, approve) {
+  if (approve) {
+    await update(ref(db, `rooms/${code}/players/${guesserId}/votes`), {
+      [voterId]: true,
+    })
+  } else {
+    await cancelGuessVote(code, guesserId)
+  }
 }
