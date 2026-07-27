@@ -110,3 +110,17 @@ export function imageUrl(url) {
   if (!url || !isDiscordActivity) return url
   return url.replace('https://upload.wikimedia.org', '/.proxy/wikimedia')
 }
+
+// Inside the activity sandbox, links must open through Discord's own
+// command; in a normal browser a new tab does the job.
+export async function openExternal(url) {
+  if (isDiscordActivity && sdk) {
+    try {
+      await sdk.commands.openExternalLink({ url })
+      return
+    } catch {
+      // fall through to window.open
+    }
+  }
+  window.open(url, '_blank', 'noopener')
+}

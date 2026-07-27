@@ -158,7 +158,6 @@ export async function startGame(code) {
     patch[`players/${id}/hasGuessed`] = false
     patch[`players/${id}/correct`] = null
     patch[`players/${id}/order`] = null
-    patch[`players/${id}/pendingGuess`] = null
     patch[`players/${id}/votes`] = null
   })
   await update(ref(db, `rooms/${code}`), patch)
@@ -209,41 +208,23 @@ export async function submitGuessResult(code, playerId, wasCorrect, order) {
     hasGuessed: true,
     correct: wasCorrect,
     order: wasCorrect ? order : null,
-    pendingGuess: null,
     votes: null,
   })
 }
 
-// --- Vote-to-reveal: the guesser says it out loud, everyone else votes.
-// A unanimous yes flips the card; a single no cancels the claim and the
-// guesser plays on (their card was never revealed, so nothing is spoiled).
+// --- Vote-to-reveal: guessing happens out loud; voting is always open.
+// Anyone can ✓ a player's card once that player has said the right answer.
+// A majority starts a countdown, unanimity a short one; undoing votes
+// below majority cancels it.
 
-export async function requestGuessVote(code, playerId) {
-  await update(ref(db, `rooms/${code}/players/${playerId}`), {
-    pendingGuess: true,
-    votes: null,
+export async function castVote(code, targetId, voterId) {
+  await update(ref(db, `rooms/${code}/players/${targetId}/votes`), {
+    [voterId]: true,
   })
 }
 
-export async function cancelGuessVote(code, playerId) {
-  await update(ref(db, `rooms/${code}/players/${playerId}`), {
-    pendingGuess: null,
-    votes: null,
-  })
-}
-
-export async function castVote(code, guesserId, voterId, approve) {
-  if (approve) {
-    await update(ref(db, `rooms/${code}/players/${guesserId}/votes`), {
-      [voterId]: true,
-    })
-  } else {
-    await cancelGuessVote(code, guesserId)
-  }
-}
-
-export async function retractVote(code, guesserId, voterId) {
-  await remove(ref(db, `rooms/${code}/players/${guesserId}/votes/${voterId}`))
+export async function retractVote(code, targetId, voterId) {
+  await remove(ref(db, `rooms/${code}/players/${targetId}/votes/${voterId}`))
 }
 
 export async function setPlayerColor(code, playerId, color) {

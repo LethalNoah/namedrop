@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { startGame } from '../lib/room'
-import { imageUrl } from '../discord'
+import { imageUrl, openExternal } from '../discord'
+import { wikiUrl } from '../lib/wikipedia'
+import { sfx } from '../sounds'
 
 export default function RevealScreen({ room, roomCode, playerId }) {
   const [error, setError] = useState(null)
   const isHost = room.hostId === playerId
+
+  useEffect(() => {
+    sfx.roundOver()
+  }, [])
 
   const players = Object.entries(room.players ?? {}).sort(([, a], [, b]) => {
     if (a.correct && b.correct) return (a.order ?? 99) - (b.order ?? 99)
@@ -41,7 +47,17 @@ export default function RevealScreen({ room, roomCode, playerId }) {
                 {id === playerId && ' (you)'}
               </span>
               <span className="reveal-character">
-                was {player.character?.title ?? '—'}
+                was{' '}
+                {player.character?.title ? (
+                  <button
+                    className="wiki-link inline"
+                    onClick={() => openExternal(wikiUrl(player.character.title))}
+                  >
+                    {player.character.title} ↗
+                  </button>
+                ) : (
+                  '—'
+                )}
               </span>
             </span>
             <span

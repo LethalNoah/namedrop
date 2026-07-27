@@ -1,3 +1,7 @@
+export function wikiUrl(title) {
+  return `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replaceAll(' ', '_'))}`
+}
+
 // Live Wikipedia lookup. generator=search + pageimages + description gives
 // titles, short descriptions, and thumbnails in a single CORS-friendly call.
 export async function searchWikipedia(query) {

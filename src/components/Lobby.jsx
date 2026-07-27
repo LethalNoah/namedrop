@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { leaveRoom, setPlayerColor, setTurnOrder, startGame } from '../lib/room'
 import { isDiscordActivity, useSpeaking } from '../discord'
+import { getVolume, setVolume } from '../sounds'
 
 const CARD_COLORS = [
   '#8a8aa0', '#f0f0f0', '#7c6cf0', '#b868f0', '#f068c0', '#f07068', '#f09848',
@@ -62,11 +63,15 @@ export default function Lobby({ room, roomCode, playerId, onLeft }) {
       <ul className="player-list">
         {players.map(([id, player]) => {
           const isSpeaking = player.discordId && speaking.has(player.discordId)
+          const accent = player.color ?? '#23a55a'
+          const style = {}
+          if (player.color) style.borderLeft = `4px solid ${player.color}`
+          if (isSpeaking) style.outline = `2px solid ${accent}`
           return (
             <li
               key={id}
-              className={`${player.connected ? '' : 'disconnected'} ${isSpeaking ? 'speaking' : ''}`}
-              style={player.color ? { borderLeft: `4px solid ${player.color}` } : undefined}
+              className={player.connected ? '' : 'disconnected'}
+              style={style}
             >
               {player.avatarUrl ? (
                 <img
@@ -85,6 +90,20 @@ export default function Lobby({ room, roomCode, playerId, onLeft }) {
           )
         })}
       </ul>
+
+      <div className="toggle-row">
+        <span className="toggle-label">Sounds</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          defaultValue={getVolume()}
+          onChange={(e) => setVolume(parseFloat(e.target.value))}
+          className="volume-slider"
+          aria-label="sound effects volume"
+        />
+      </div>
 
       <div className="toggle-row">
         <span className="toggle-label">Card color</span>
