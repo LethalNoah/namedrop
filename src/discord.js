@@ -107,8 +107,21 @@ function roomCodeFromInstance(instanceId) {
 // The network patch covers fetch/WebSocket but NOT <img> tags, so image
 // URLs get rewritten manually when rendering inside Discord.
 export function imageUrl(url) {
-  if (!url || !isDiscordActivity) return url
-  return url.replace('https://upload.wikimedia.org', '/.proxy/wikimedia')
+  if (!url) return url
+  // Wikimedia moved scaled thumbnails to thumb.wikimedia.org (Sept 2026);
+  // old-style upload.wikimedia.org/.../thumb/... URLs stored in existing
+  // rooms now 400, so repoint them at the new host.
+  let fixed = url
+  if (fixed.includes('//upload.wikimedia.org/') && fixed.includes('/thumb/')) {
+    fixed = fixed.replace('https://upload.wikimedia.org', 'https://thumb.wikimedia.org')
+  }
+  if (!isDiscordActivity) return fixed
+  // Inside Discord, route through our own Vercel image relay (reachable
+  // via the existing root mapping) instead of per-host portal mappings.
+  if (/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(fixed)) {
+    return '/.proxy/api/img?src=' + encodeURIComponent(fixed)
+  }
+  return fixed
 }
 
 // Inside the activity sandbox, links must open through Discord's own
